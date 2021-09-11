@@ -13,4 +13,4 @@ Meaning you can set it to do nothing, which allows you to manually distribute no
 Is this ideal? Perhaps not for you, but it works great for me. 
 
 
-`/itemmanager` command (which can be shortened as allowed by MQ2) to pause [on|off] or if no selection, will toggle. This is the only command.
+`/lootmanager` command (which can be shortened as allowed by MQ2) to pause [on|off] or if no selection, will toggle. This is the only command.
