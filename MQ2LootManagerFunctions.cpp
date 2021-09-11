@@ -82,22 +82,6 @@ bool HandlePersonalLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLo
 	return false;//Didn't handle any loot in here.
 }
 
-enum SharedLootType : DWORD {
-	NPC_Name,
-	Item,
-	Status,
-	Action,
-	Manage,
-	AlwaysNeed,
-	AlwaysGreed,
-	AutoRoll,
-	Never,
-	Need,
-	Greed,
-	No,
-	rootItem//root?
-};
-
 bool HandleSharedLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList) // Handle items in your shared loot window
 {
 	if (pSharedList)
