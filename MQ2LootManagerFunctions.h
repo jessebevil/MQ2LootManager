@@ -1,5 +1,13 @@
 #pragma once
 #include "..\MQ2Plugin.h"
+const std::string PluginMsg = "\ar[\a-tMQ2LootManager\ar]\ao:: ";
+enum ItemSize : int {
+	Tiny,
+	Small,
+	Medium,
+	Large,
+	Giant
+};
 
 bool AutoLootAllIsOn();
 int GroupTotal();

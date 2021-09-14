@@ -20,15 +20,15 @@ void LootMgrCmd(PSPAWNINFO pSpawn, char* szLine) {
         GetArg(szArg, szLine, 2);
         if (!strlen(szArg)) {
             bPaused = !bPaused;
-            WriteChatf("%s", (bPaused ? "Paused" : "Unpaused"));
+            WriteChatf("%s%s", PluginMsg.c_str(), (bPaused ? "Paused" : "Unpaused"));
         }
         else if (!_stricmp(szArg, "on")) {
             bPaused = true;
-            WriteChatf("Paused");
+            WriteChatf("%sPaused", PluginMsg.c_str());
         }
         else if (!_stricmp(szArg, "off")) {
             bPaused = false;
-            WriteChatf("Unpaused");
+            WriteChatf("%sUnpaused", PluginMsg.c_str());
         }
     }
 }
@@ -49,6 +49,9 @@ PLUGIN_API VOID ShutdownPlugin(VOID)
 // This is called every time MQ pulses
 PLUGIN_API VOID OnPulse(VOID)
 {
+    if (bPaused)//if the plugin is paused, just wait.
+        return;
+
     {//only pulse every 500 ticks. (every half second? Maybe too fast.)
         static uint64_t PulseTimer = 0;
         if (PulseTimer > GetTickCount64())
@@ -59,59 +62,82 @@ PLUGIN_API VOID OnPulse(VOID)
 
     //If I'm InGame()
     if (GetGameState() == GAMESTATE_INGAME && GetCharInfo() && GetCharInfo()->pSpawn && GetCharInfo2()) {
+        //Default to assume if we don't have any giant slots left, we can't carry anything.
+        //TODO: Make this smarter, based on the item we plan to pickup to see if we can hold that item.
+        static bool OutOfSpace = false;
+        if (!GetFreeInventory(Giant)) {
+            if (!OutOfSpace) {
+                WriteChatf("%s\arOut of Space!! Clean up your bags you slob!");
+                OutOfSpace = true;
+            }
+            return;
+        }
+        else if (OutOfSpace) {
+            WriteChatf("We got space again, resuming looting.");
+            OutOfSpace = false;
+        }
+
         static bool IAmML = false;
         if (IAmMasterLooter()) {
             if (!IAmML) {
-                WriteChatf("I should collect the loot.");
+                WriteChatf("%sI should collect the loot.", PluginMsg.c_str());
                 IAmML = true;
             }
         }
         else if (IAmML) {
-            WriteChatf("No longer collecting the loot.");
+            WriteChatf("%sNo longer collecting the loot.", PluginMsg.c_str());
             IAmML = false;
         }
 
         if (IAmML && pAdvancedLootWnd) {//If I'm the master looter and AutoLootAllIsOn.
-            if (PEQADVLOOTWND pAdvLoot = (PEQADVLOOTWND)pAdvancedLootWnd) {
-                CListWnd* pPersonalList;
-                CListWnd* pSharedList;
-                if (!pAdvLoot->pPLootList || !pAdvLoot->pPLootList->PersonalLootList) {
-                    WriteChatf("Avoid Nullptr");
-                }
-                else {
-                    pPersonalList = (CListWnd*)pAdvancedLootWnd->GetChildItem("ADLW_PLLList");
-                }
+            PCHARINFO pChar = GetCharInfo();
+            if (!pChar)
+                return;
 
-                if (!pAdvLoot->pCLootList || !pAdvLoot->pCLootList->SharedLootList) {
-                    WriteChatf("Avoid Nullptr2");
-                }
-                else {
-                    pSharedList = (CListWnd*)pAdvLoot->pCLootList->SharedLootList;
-                }
+            PCHARINFO2 pChar2 = GetCharInfo2();
+            if (!pChar2)
+                return;
 
+            PEQADVLOOTWND pAdvLoot = (PEQADVLOOTWND)pAdvancedLootWnd;
+            if (!pAdvLoot)
+                return;
 
-                PCHARINFO pChar = GetCharInfo();
-                if (!pChar)
+            CListWnd* pPersonalList;
+            CListWnd* pSharedList;
+            if (!pAdvLoot->pPLootList || !pAdvLoot->pPLootList->PersonalLootList) {
+                return;
+            }
+            else {
+                //pPersonalList = (CListWnd*)pAdvLoot->pPLootList->PersonalLootList; This doesn't work, but using this method works for SharedLootList Something broken?
+                pPersonalList = (CListWnd*)pAdvancedLootWnd->GetChildItem("ADLW_PLLList");
+            }
+
+            if (!pPersonalList)
+                return;
+
+            if (!pAdvLoot->pCLootList || !pAdvLoot->pCLootList->SharedLootList) {
+                return;
+            }
+            else {
+                pSharedList = (CListWnd*)pAdvLoot->pCLootList->SharedLootList;
+            }
+
+            if (!pSharedList)
+                return;
+
+            //Can't Loot if already Looting.
+            if (LootInProgress(pAdvLoot, pPersonalList, pSharedList)) {
+                return;
+            }
+            //Do Looting shit here. Personal list first, shared list next.
+            if (pPersonalList) {
+                if (HandlePersonalLoot(pChar, pChar2, pAdvLoot, pPersonalList, pSharedList)) {
                     return;
-
-                PCHARINFO2 pChar2 = GetCharInfo2();
-                if (!pChar2)
-                    return;
-
-                //Can't Loot if already Looting.
-                if (LootInProgress(pAdvLoot, pPersonalList, pSharedList)) {
-                    return;
                 }
-                //Do Looting shit here. Personal list first, shared list next.
-                if (pPersonalList) {
-                    if (HandlePersonalLoot(pChar, pChar2, pAdvLoot, pPersonalList, pSharedList)) {
-                        return;
-                    }
-                }
-                if (pSharedList) {
-                    if (HandleSharedLoot(pChar, pChar2, pAdvLoot, pPersonalList, pSharedList)) {
-                        return;
-                    }
+            }
+            if (pSharedList) {
+                if (HandleSharedLoot(pChar, pChar2, pAdvLoot, pPersonalList, pSharedList)) {
+                    return;
                 }
             }
         }
