@@ -7,8 +7,10 @@ int GroupTotal() {
 		return 0;
 
 	for (int i = 1; i < 6; i++) {
-		if (GetCharInfo()->pGroupInfo->pMember[i])
-			n++;
+		if (CGroupMember* pMember = GetCharInfo()->Group->GetGroupMember(i)) {
+			if (pMember->pSpawn)
+				n += 1;
+		}
 	}
 
 	if (n)//count me too!
@@ -32,12 +34,9 @@ bool IAmMasterLooter() {
 	else {
 		int partymembers = GroupTotal();
 		for (int i = 0; i < partymembers; i++) {
-			if (pChar->pGroupInfo->pMember[i] && pChar->pGroupInfo->pMember[i]->MasterLooter) {
-				if (pChar->pGroupInfo->pMember[i]->pName) {
-					pChar->pGroupInfo->pMember[i]->pSpawn->SpawnID;
-					char Name[64] = { 0 };
-					GetCXStr(pChar->pGroupInfo->pMember[i]->pName, Name, MAX_STRING);
-					if (!_stricmp(pChar->Name, Name)) {
+			if (CGroupMember* pMember = GetCharInfo()->Group->GetGroupMember(i)) {
+				if (pMember->MasterLooter) {
+					if (!_stricmp(pChar->Name, pMember->Name.c_str())) {
 						return true;
 					}
 				}
@@ -77,7 +76,7 @@ enum PersonalListOption : DWORD {
 	AG
 };
 // Handle personal loot
-bool HandlePersonalLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList) {
+bool HandlePersonalLoot(PCHARINFO pChar, PcProfile* pChar2, CAdvancedLootWnd* pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList) {
 	//Auto Loot All is on, so this will get handled by EQ.
 	//If I'm the master looter, let's assume I'm watching that screen and not do anything.
 	//If I don't have a group size, then manage my own personal list.
@@ -88,10 +87,9 @@ bool HandlePersonalLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLo
 	//If auto loot all isn't on and I'm not the Master Looter we should just collect anything going to the personal list while in a group and not the master looter.
 	if (pAdvLoot->pPLootList) {
 		for (long k = 0; k < pPersonalList->ItemsArray.Count; k++) {
-			unsigned long long listindex = pPersonalList->GetItemData(k);
+			uint64_t listindex = pPersonalList->GetItemData(k);
 			if (listindex != -1) {
-				unsigned long long multiplier = sizeof(LOOTITEM) * listindex;
-				PLOOTITEM pPersonalItem = (PLOOTITEM)(((unsigned int)pAdvLoot->pPLootList->pLootItem) + multiplier);
+				AdvancedLootItem* pPersonalItem = &pAdvLoot->pPLootList->Items[k];
 				if (!pPersonalItem)
 					return false;
 
@@ -114,7 +112,7 @@ bool HandlePersonalLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLo
 	return false;//Didn't handle any loot in here.
 }
 
-bool HandleSharedLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList) // Handle items in your shared loot window
+bool HandleSharedLoot(PCHARINFO pChar, PcProfile* pChar2, CAdvancedLootWnd* pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList) // Handle items in your shared loot window
 {
 	if (pSharedList)
 	{
@@ -125,26 +123,24 @@ bool HandleSharedLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot
 
 		//Plure and MQ2Commands.cpp do it this way. It's an odd way to handle it, but not sure what a better option would be provided the current state of things.
 		for (int i = 0; i < pSharedList->ItemsArray.Count; i++) {
-			unsigned long long listindex = pSharedList->GetItemData(i);
+			uint64_t listindex = pSharedList->GetItemData(i);//returns uint64_t, but all uses of it here are DWORDs, so to avoid VS crying, I've casted all uses to DWORD lol.
 			if (listindex != -1) {
-				unsigned long long multiplier = sizeof(LOOTITEM) * listindex;
-
-				PLOOTITEM pSharedItem = (PLOOTITEM)(((unsigned int)pAdvLoot->pCLootList->pLootItem) + multiplier);
-				if (!pSharedItem)
+				AdvancedLootItem* pSharedItem = &pAdvLoot->pCLootList->Items[(DWORD)listindex];
+				if (!pSharedItem || pSharedItem->LootDetails.IsEmpty())
 					continue;
 
-				if (pAdvancedLootWnd && pSharedItem && pSharedItem->LootDetails.m_length > 0) {
+				if (pAdvancedLootWnd) {
 					if (!pSharedItem->bAutoRoll && pSharedItem->AskTimer > 0 || !pSharedItem->bAutoRoll) {//Let autoroll do autorolls.
 						//Give the item to myself.
 						if (pSharedItem->AlwaysNeed || pSharedItem->AlwaysGreed) {
-							pAdvancedLootWnd->DoSharedAdvLootAction(pSharedItem, &CXStr(pChar->Name), Give, pSharedItem->LootDetails.m_array[0].StackCount);
+							pAdvancedLootWnd->DoSharedAdvLootAction(*pSharedItem, pChar->Name, Give, pSharedItem->LootDetails[0].StackCount);
 							WriteChatf("%s\agGiving \ap%s\ax to myself.", PluginMsg.c_str(), pSharedItem->Name);
 							return true;
 						}
 
 						//Leave this on the corpse.
 						if (pSharedItem->Never || pSharedItem->No) {
-							pAdvancedLootWnd->DoSharedAdvLootAction(pSharedItem, &CXStr(pChar->Name), Leave, pSharedItem->LootDetails.m_array[0].StackCount);
+							pAdvancedLootWnd->DoSharedAdvLootAction(*pSharedItem, pChar->Name, Leave, pSharedItem->LootDetails[0].StackCount);
 							WriteChatf("%s\arLeaving \ap%s\ax on the corpse.", PluginMsg.c_str(), pSharedItem->Name);
 							return true;
 						}

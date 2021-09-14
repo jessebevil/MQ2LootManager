@@ -1,5 +1,5 @@
 #pragma once
-#include "..\MQ2Plugin.h"
+#include <mq/Plugin.h>
 const std::string PluginMsg = "\ar[\a-tMQ2LootManager\ar]\ao:: ";
 enum ItemSize : int {
 	Tiny,
@@ -13,5 +13,5 @@ bool AutoLootAllIsOn();
 int GroupTotal();
 bool IAmMasterLooter();
 bool WinState(CXWnd* pWnd);
-bool HandlePersonalLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList);
-bool HandleSharedLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList);
+bool HandlePersonalLoot(PCHARINFO pChar, PcProfile* pChar2, CAdvancedLootWnd* pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList);
+bool HandleSharedLoot(PCHARINFO pChar, PcProfile* pChar2, CAdvancedLootWnd* pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList);

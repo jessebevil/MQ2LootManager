@@ -7,7 +7,7 @@
 
 
 
-#include "../MQ2Plugin.h"
+#include <mq/Plugin.h>
 #include "MQ2LootManagerFunctions.h"
 
 bool bPaused = false;
@@ -61,7 +61,7 @@ PLUGIN_API VOID OnPulse(VOID)
     }
 
     //If I'm InGame()
-    if (GetGameState() == GAMESTATE_INGAME && GetCharInfo() && GetCharInfo()->pSpawn && GetCharInfo2()) {
+    if (GetGameState() == GAMESTATE_INGAME && GetCharInfo() && GetCharInfo()->pSpawn && GetPcProfile()) {
         //Default to assume if we don't have any giant slots left, we can't carry anything.
         //TODO: Make this smarter, based on the item we plan to pickup to see if we can hold that item.
         static bool OutOfSpace = false;
@@ -94,11 +94,11 @@ PLUGIN_API VOID OnPulse(VOID)
             if (!pChar)
                 return;
 
-            PCHARINFO2 pChar2 = GetCharInfo2();
+            PcProfile* pChar2 = GetPcProfile();
             if (!pChar2)
                 return;
 
-            PEQADVLOOTWND pAdvLoot = (PEQADVLOOTWND)pAdvancedLootWnd;
+            CAdvancedLootWnd* pAdvLoot = (CAdvancedLootWnd*)pAdvancedLootWnd;
             if (!pAdvLoot)
                 return;
 
