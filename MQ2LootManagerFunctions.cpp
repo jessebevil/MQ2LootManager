@@ -80,7 +80,8 @@ enum PersonalListOption : DWORD {
 bool HandlePersonalLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList) {
 	//Auto Loot All is on, so this will get handled by EQ.
 	//If I'm the master looter, let's assume I'm watching that screen and not do anything.
-	if (AutoLootAllIsOn() || IAmMasterLooter()) {
+	//If I don't have a group size, then manage my own personal list.
+	if (AutoLootAllIsOn() || !GroupTotal() || IAmMasterLooter() ) {
 		return false;
 	}
 
@@ -98,6 +99,7 @@ bool HandlePersonalLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLo
 				if (pPersonalItem->AlwaysNeed || pPersonalItem->AlwaysGreed)
 					continue;
 
+				//Will keep us from accidentally letting items rot. If it's made it to the personal list and I'm not the master looter, then I'm pretty sure I want to keep it.
 				if (CXWnd* pwnd = GetAdvLootPersonalListItem((DWORD)listindex, Loot))
 				{
 					WriteChatf("%s\ayAccepting \ap%s\ax from personal list, because we didn't have a choice made and we didn't want it to rot.", PluginMsg.c_str(), pPersonalItem->Name);
