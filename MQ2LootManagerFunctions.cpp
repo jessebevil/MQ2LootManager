@@ -67,37 +67,47 @@ enum LootAction : DWORD {
 	Leave
 };
 
-
+enum PersonalListOption : DWORD {
+	Name,
+	Item,
+	Loot,
+	eLeave,
+	Never,
+	AN,
+	AG
+};
 // Handle personal loot
 bool HandlePersonalLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot, CListWnd* pPersonalList, CListWnd* pSharedList) {
-	//Auto Loot All is on, so this will get handled by EQ. But here's a snippet otherwise.
-	if (AutoLootAllIsOn()) {
+	//Auto Loot All is on, so this will get handled by EQ.
+	//If I'm the master looter, let's assume I'm watching that screen and not do anything.
+	if (AutoLootAllIsOn() || IAmMasterLooter()) {
 		return false;
 	}
 
-	//if (pAdvLoot->pPLootList) {
-	//	for (long k = 0; k < pPersonalList->ItemsArray.Count; k++) {
-	//		unsigned long long listindex = pPersonalList->GetItemData(k);
-	//		if (listindex != -1) {
-	//			unsigned long long multiplier = sizeof(LOOTITEM) * listindex;
-	//			PLOOTITEM pPersonalItem = (PLOOTITEM)(((unsigned int)pAdvLoot->pPLootList->pLootItem) + multiplier);
-	//			if (!pPersonalItem)
-	//				return false;
+	//If auto loot all isn't on and I'm not the Master Looter we should just collect anything going to the personal list while in a group and not the master looter.
+	if (pAdvLoot->pPLootList) {
+		for (long k = 0; k < pPersonalList->ItemsArray.Count; k++) {
+			unsigned long long listindex = pPersonalList->GetItemData(k);
+			if (listindex != -1) {
+				unsigned long long multiplier = sizeof(LOOTITEM) * listindex;
+				PLOOTITEM pPersonalItem = (PLOOTITEM)(((unsigned int)pAdvLoot->pPLootList->pLootItem) + multiplier);
+				if (!pPersonalItem)
+					return false;
 
-	//			if (pPersonalItem->AlwaysNeed || pPersonalItem->AlwaysGreed) {
-	//				pAdvancedLootWnd->DoSharedAdvLootAction(pPersonalItem, &CXStr(pChar->Name), Give, pPersonalItem->LootDetails.m_array[0].StackCount);//Give the item to myself?
-	//				WriteChatf("%s\agGiving \ap%s\ax to myself.", PluginMsg.c_str(), pPersonalItem->Name);
-	//				return true;
-	//			}
+				//Skip items with a setting, EQ will do this automatically.
+				if (pPersonalItem->AlwaysNeed || pPersonalItem->AlwaysGreed)
+					continue;
 
-	//			if (pPersonalItem->Never || pPersonalItem->No) {//Leave this on the corpse.
-	//				pAdvancedLootWnd->DoSharedAdvLootAction(pPersonalItem, &CXStr(pChar->Name), Leave, pPersonalItem->LootDetails.m_array[0].StackCount);
-	//				WriteChatf("%s\arLeaving \ap%s\ax on the corpse.", PluginMsg.c_str(), pPersonalItem->Name);
-	//				return true;
-	//			}
-	//		}
-	//	}
-	//}
+				if (CXWnd* pwnd = GetAdvLootPersonalListItem((DWORD)listindex, Loot))
+				{
+					WriteChatf("%s\ayAccepting \ap%s\ax from personal list, because we didn't have a choice made and we didn't want it to rot.", PluginMsg.c_str(), pPersonalItem->Name);
+					SendWndClick2(pwnd, "leftmouseup"); // Loot the item
+					return true;
+				}
+
+			}
+		}
+	}
 
 	return false;//Didn't handle any loot in here.
 }
@@ -106,7 +116,6 @@ bool HandleSharedLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot
 {
 	if (pSharedList)
 	{
-		bool bMasterLooter = false;
 		if (!IAmMasterLooter()) // if it returns false, the plugin should stop doing loot stuff this pulse
 		{
 			return true;
@@ -123,7 +132,7 @@ bool HandleSharedLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot
 					continue;
 
 				if (pAdvancedLootWnd && pSharedItem && pSharedItem->LootDetails.m_length > 0) {
-					if (!pSharedItem->bAutoRoll && pSharedItem->AskTimer > 0 || !pSharedItem->bAutoRoll) {//might not give a shit about this bit.
+					if (!pSharedItem->bAutoRoll && pSharedItem->AskTimer > 0 || !pSharedItem->bAutoRoll) {//Let autoroll do autorolls.
 						//Give the item to myself.
 						if (pSharedItem->AlwaysNeed || pSharedItem->AlwaysGreed) {
 							pAdvancedLootWnd->DoSharedAdvLootAction(pSharedItem, &CXStr(pChar->Name), Give, pSharedItem->LootDetails.m_array[0].StackCount);
@@ -141,29 +150,6 @@ bool HandleSharedLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot
 				}
 			}
 		}
-		//Only handles the first item in the list.
-		//if (!pSharedList->ItemsArray.Count)
-		//	return false;
-
-		//LOOTLIST* pSharedList = pAdvLoot->pCLootList;
-		//if (!pSharedList)
-		//	return false;
-
-		//PLOOTITEM pThisLootItem = pSharedList->pLootItem;
-		//if (!pThisLootItem)
-		//	return false;
-
-		//if (pThisLootItem->AlwaysNeed || pThisLootItem->AlwaysGreed) {
-		//	pAdvancedLootWnd->DoSharedAdvLootAction(pThisLootItem, &CXStr(pChar->Name), Give, pThisLootItem->LootDetails.m_array[0].StackCount);//Give the item to myself?
-		//	WriteChatf("%s\agGiving \ap%s\ax to myself.", PluginMsg.c_str(), pThisLootItem->Name);
-		//	return true;
-		//}
-
-		//if (pThisLootItem->Never || pThisLootItem->No) {//Leave this on the corpse.
-		//	pAdvancedLootWnd->DoSharedAdvLootAction(pThisLootItem, &CXStr(pChar->Name), Leave, pThisLootItem->LootDetails.m_array[0].StackCount);
-		//	WriteChatf("%s\arLeaving \ap%s\ax on the corpse.", PluginMsg.c_str(), pThisLootItem->Name);
-		//	return true;
-		//}
 	}
 	return false;//Didn't do any looting. So return false.
 }

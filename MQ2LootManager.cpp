@@ -89,7 +89,7 @@ PLUGIN_API VOID OnPulse(VOID)
             IAmML = false;
         }
 
-        if (IAmML && pAdvancedLootWnd) {//If I'm the master looter and AutoLootAllIsOn.
+        if (pAdvancedLootWnd) {//If I'm the master looter and AutoLootAllIsOn.
             PCHARINFO pChar = GetCharInfo();
             if (!pChar)
                 return;
@@ -136,7 +136,7 @@ PLUGIN_API VOID OnPulse(VOID)
                 }
             }
             if (pSharedList) {
-                if (HandleSharedLoot(pChar, pChar2, pAdvLoot, pPersonalList, pSharedList)) {
+                if (IAmML && HandleSharedLoot(pChar, pChar2, pAdvLoot, pPersonalList, pSharedList)) {
                     return;
                 }
             }
