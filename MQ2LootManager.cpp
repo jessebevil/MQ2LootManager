@@ -12,6 +12,7 @@
 
 bool bPaused = false;
 PreSetup("MQ2LootManager");
+PLUGIN_VERSION(1.0);
 
 void LootMgrCmd(PSPAWNINFO pSpawn, char* szLine) {
     char szArg[MAX_STRING] = { 0 };
