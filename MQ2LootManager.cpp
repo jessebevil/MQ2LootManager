@@ -8,6 +8,7 @@
 
 
 #include "../MQ2Plugin.h"
+#if !defined(ROF2EMU) && !defined(UFEMU)
 #include "MQ2LootManagerFunctions.h"
 
 bool bPaused = false;
@@ -44,11 +45,15 @@ PLUGIN_API VOID ShutdownPlugin(VOID)
 {
     RemoveCommand("/lootmanager");
 }
-
+#endif
 
 // This is called every time MQ pulses
 PLUGIN_API VOID OnPulse(VOID)
 {
+#if defined(ROF2EMU) || defined(UFEMU)
+    WriteChatf("This plugin cannot be used on EMU since it doesn't have Advanced Loot Window");
+    EzCommand("/plugin MQ2LootManager Unload");
+#else
     if (bPaused)//if the plugin is paused, just wait.
         return;
 
@@ -142,4 +147,5 @@ PLUGIN_API VOID OnPulse(VOID)
             }
         }
     }//InGame()
+#endif
 }

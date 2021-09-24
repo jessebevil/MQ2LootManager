@@ -1,5 +1,7 @@
+
 #pragma once
 #include "MQ2LootManagerFunctions.h"
+#if !defined(ROF2EMU) && !defined(UFEMU)
 
 int GroupTotal() {
 	int n = 0;
@@ -155,3 +157,4 @@ bool HandleSharedLoot(PCHARINFO pChar, PCHARINFO2 pChar2, PEQADVLOOTWND pAdvLoot
 	}
 	return false;//Didn't do any looting. So return false.
 }
+#endif
