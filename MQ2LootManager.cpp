@@ -47,7 +47,10 @@ void LootMgrCmd(PSPAWNINFO pSpawn, char* szLine) {
             bPaused = false;
             WriteChatf("%sUnpaused", PluginMsg.c_str());
         }
+		return;
     }
+	//User didn't issue a command. Just tell them the status of pause.
+	WriteChatf("%s%s", PluginMsg.c_str(), (bPaused ? "Paused" : "Unpaused"));
 }
 
 // Called once, when the plugin is to initialize
