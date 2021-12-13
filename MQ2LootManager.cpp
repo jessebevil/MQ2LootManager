@@ -14,6 +14,22 @@ bool bPaused = false;
 PreSetup("MQ2LootManager");
 PLUGIN_VERSION(1.0);
 
+
+
+void CheckForLoreEquipped() {
+	if (CXWnd* ConfirmationWnd = FindMQ2Window("ConfirmationDialogBox")) {
+		if (ConfirmationWnd->IsVisible()) {
+			if (CStmlWnd* TextWnd = (CStmlWnd*)ConfirmationWnd->GetChildItem("CD_TextOutput")) {
+				if (TextWnd->GetSTMLText().find("group with an item you already possess") != CXStr::npos) {
+					if (CButtonWnd* YesBttn = (CButtonWnd*)ConfirmationWnd->GetChildItem("CD_Yes_Button")) {
+						SendWndClick2(YesBttn, "leftmouseup");
+					}
+				}
+			}
+		}
+	}
+}
+
 void LootMgrCmd(PSPAWNINFO pSpawn, char* szLine) {
     char szArg[MAX_STRING] = { 0 };
     GetArg(szArg, szLine, 1);
@@ -142,5 +158,14 @@ PLUGIN_API VOID OnPulse(VOID)
                 }
             }
         }
+
+		//Handle "Lore-Equipped Message.
+		/*Example
+		* Penumbra Pauldrons shares a LORE_EQUIP group with an item you already possess, are you sure you wish to loot it?
+		*
+		* Found window is ConfirmationDialogBox
+		* Sub Window for above example text is CD_TextOutput
+		*/
+		CheckForLoreEquipped();
     }//InGame()
 }
