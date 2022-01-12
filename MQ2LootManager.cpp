@@ -87,13 +87,13 @@ PLUGIN_API VOID OnPulse(VOID)
         static bool OutOfSpace = false;
         if (!GetFreeInventory(Giant)) {
             if (!OutOfSpace) {
-                WriteChatf("%s\arOut of Space!! Clean up your bags you slob!");
+                WriteChatf("%s\arOut of Space!! Clean up your bags you slob!", PluginMsg.c_str());
                 OutOfSpace = true;
             }
             return;
         }
         else if (OutOfSpace) {
-            WriteChatf("We got space again, resuming looting.");
+            WriteChatf("%s\agWe got space again, resuming looting.", PluginMsg.c_str());
             OutOfSpace = false;
         }
 
@@ -149,12 +149,14 @@ PLUGIN_API VOID OnPulse(VOID)
             if (LootInProgress(pAdvLoot, pPersonalList, pSharedList)) {
                 return;
             }
+
             //Do Looting shit here. Personal list first, shared list next.
             if (pPersonalList) {
                 if (HandlePersonalLoot(pChar, pChar2, pAdvLoot, pPersonalList, pSharedList)) {
                     return;
                 }
             }
+
             if (pSharedList) {
                 if (IAmML && HandleSharedLoot(pChar, pChar2, pAdvLoot, pPersonalList, pSharedList)) {
                     return;

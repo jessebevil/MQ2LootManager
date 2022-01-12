@@ -8,7 +8,7 @@ int GroupTotal() {
 
 	for (int i = 1; i < 6; i++) {
 		if (CGroupMember* pMember = GetCharInfo()->Group->GetGroupMember(i)) {
-			if (pMember->pSpawn)
+			if (pMember)
 				n += 1;
 		}
 	}
@@ -32,8 +32,10 @@ bool IAmMasterLooter() {
 		}
 	}
 	else {
-		int partymembers = GroupTotal();
-		for (int i = 0; i < partymembers; i++) {
+		if (!GetCharInfo()->pGroupInfo)
+			return true;
+
+		for (int i = 0; i < 6; i++) {
 			if (CGroupMember* pMember = GetCharInfo()->Group->GetGroupMember(i)) {
 				if (pMember->MasterLooter) {
 					if (!_stricmp(pChar->Name, pMember->Name.c_str())) {
